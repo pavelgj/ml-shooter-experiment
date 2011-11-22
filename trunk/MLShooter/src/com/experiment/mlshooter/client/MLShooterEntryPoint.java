@@ -3,8 +3,7 @@ package com.experiment.mlshooter.client;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.math.stat.StatUtils;
-
+import com.experiment.mlshooter.client.Utils.NormalizationStats;
 import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.canvas.dom.client.Context2d;
 import com.google.gwt.canvas.dom.client.CssColor;
@@ -288,7 +287,9 @@ public class MLShooterEntryPoint implements EntryPoint {
 			y[i] = rawData.get(i)[DATA_POINTS];
 		}
 		
-		normalize(X, rawData.size(), DATA_POINTS);
+		NormalizationStats normalizeStats = Utils.normalize(X, rawData.size(), DATA_POINTS);
+		means = normalizeStats.getMeans();
+		sigmas = normalizeStats.getVariance();
 		
 		double[][] Xpow = new double[rawData.size()][FEATURES_N];
 		for (int i = 0; i < rawData.size(); i++) {
@@ -342,24 +343,6 @@ public class MLShooterEntryPoint implements EntryPoint {
 		} catch (Exception e) {
 			e.printStackTrace();
 			Window.alert(e.getMessage());
-		}
-	}
-
-	public static void normalize(double[][] X, int m, int n) {
-		means = new double[n];
-		sigmas = new double[n];
-		for (int j = 0; j < n; j++) {
-			double[] col = new double[m];
-			for (int i = 0; i < m; i++) {
-				col[i] = X[i][j];
-			}
-			means[j] = StatUtils.mean(col);
-			sigmas[j] = Math.sqrt(StatUtils.variance(col, means[j]));
-		}
-		for (int i = 0; i < m; i++) {
-			for (int j = 1; j < n; j++) {
-				X[i][j] = (X[i][j] - means[j]) / sigmas[j];
-			}
 		}
 	}
 

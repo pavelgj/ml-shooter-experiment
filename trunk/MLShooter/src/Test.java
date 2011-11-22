@@ -1,12 +1,11 @@
 import java.util.List;
 
 import com.experiment.mlshooter.client.LogisticaRegression;
-import com.experiment.mlshooter.client.MLShooterEntryPoint;
 import com.experiment.mlshooter.client.Utils;
 
 public class Test {
 
-	public static void main(String[] args) {
+	public static void main2(String[] args) {
 		List<Double> raiseToPower = Utils.generatePolynomialFeatures(new double[]{2, 3}, 5);
 		System.out.println(raiseToPower.size());
 		System.out.println(raiseToPower.toString());
@@ -23,7 +22,7 @@ public class Test {
 				{4, 4},
 		};
 
-		MLShooterEntryPoint.normalize(X, X.length,  2 );
+		Utils.normalize(X, X.length,  2 );
 		
 		for (int i = 0; i < X.length; i++) {
 			for (int j = 0; j < X[i].length; j++) {
@@ -33,7 +32,7 @@ public class Test {
 		}
 	}
 	
-	public static void main2(String[] args) throws Exception {
+	public static void main(String[] args) throws Exception {
 		double[][] X = new double[][]{
 			{ 0.08876232511005902, 129.99996948242188},
 			{ 0.09727473885381215, 346.0002746582031},
@@ -69,7 +68,6 @@ public class Test {
 			{ 0.08235444011101165, 1314.998291015625},
 			{ 0.1001738714596653, 1182.9981689453125}
 		};
-		
 		
 		double[] y = new double[] {
 			   1,
@@ -107,7 +105,7 @@ public class Test {
 			   0
 		};
 		
-		MLShooterEntryPoint.normalize(X, X.length, 2);
+		Utils.normalize(X, X.length, 2);
 		
 		int n = 10;
 		
@@ -119,11 +117,47 @@ public class Test {
 			}
 		}
 		
-		double[] latestTheta = LogisticaRegression.regress(Xpow, y, 1);
+		double[] latestTheta = LogisticaRegression.regress(Xpow, y, 0);
 		for (double d : latestTheta) {
 			System.out.print(d + ";");
 		}
 		System.out.println();
-
+		
+		int count = 0;
+		int fault = 0;
+		int fault0 = 0;
+		int count0 = 0;
+		int fault1 = 0;
+		int count1 = 0;
+		for (int i = 0; i < X.length; i++) {
+			double s = 0;
+			for (int j = 0; j < X[i].length; j++) {
+				s += latestTheta[j] * X[i][j];
+			}
+			s = LogisticaRegression.sigmoid(s);
+			double prediction = s >= 0.5 ? 1 : 0;
+			System.out.println(i + " = " + s + " y=" + y[i] + " prediction=" + prediction);
+			count++;
+			if (prediction != y[i]) {
+				fault++;
+			}
+			if (y[i] == 0) {
+				count0++;
+				if (prediction != 0) {
+					fault0++;
+				}
+			}
+			if (y[i] == 1) {
+				count1++;
+				if (prediction != 1) {
+					fault1++;
+				}
+			}
+		}
+		float accuracy = 100 - (fault / (float)count) * 100;
+		float accuracy0 = 100 - (fault0 / (float)count0) * 100;
+		float accuracy1 = 100 - (fault1 / (float)count1) * 100;
+		
+		System.out.println("accuracy=" + accuracy + "\naccuracy0=" + accuracy0 + "\naccuracy1=" + accuracy1);
 	}
 }
