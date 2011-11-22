@@ -9,6 +9,7 @@ import org.apache.commons.math.analysis.UnivariateRealFunction;
 import org.apache.commons.math.linear.Array2DRowRealMatrix;
 import org.apache.commons.math.linear.MatrixIndexException;
 import org.apache.commons.math.linear.RealMatrix;
+import org.apache.commons.math.stat.StatUtils;
 
 
 public class Utils {
@@ -182,5 +183,44 @@ public class Utils {
 		}
 		Collections.sort(res);
 		return res;
+	}
+
+	public static NormalizationStats normalize(double[][] X, int m, int n) {
+		double[] means = new double[n];
+		double[] sigmas = new double[n];
+		for (int j = 0; j < n; j++) {
+			double[] col = new double[m];
+			for (int i = 0; i < m; i++) {
+				col[i] = X[i][j];
+			}
+			means[j] = StatUtils.mean(col);
+			sigmas[j] = Math.sqrt(StatUtils.variance(col, means[j]));
+		}
+		for (int i = 0; i < m; i++) {
+			for (int j = 0; j < n; j++) {
+				X[i][j] = (X[i][j] - means[j]) / sigmas[j];
+			}
+		}
+		
+		return new NormalizationStats(means, sigmas);
+	}
+	
+	public static class NormalizationStats {
+		
+		private double[] means;
+		private double[] variance;
+		
+		private NormalizationStats(double[] means, double[] variance) {
+			this.means = means;
+			this.variance = variance;
+		}
+		
+		public double[] getMeans() {
+			return means;
+		}
+
+		public double[] getVariance() {
+			return variance;
+		}
 	}
 }
