@@ -1,4 +1,8 @@
 package com.experiment.mlshooter.client;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.commons.math.FunctionEvaluationException;
 import org.apache.commons.math.analysis.BivariateRealFunction;
 import org.apache.commons.math.analysis.UnivariateRealFunction;
@@ -130,4 +134,53 @@ public class Utils {
 		return res;
 	}
 	
+	public static List<Double> generatePolynomialFeatures(double[] init, int pow) {
+		List<Double> poly = new ArrayList<Double>();
+		poly.add(1d);
+		for (int i = 1; i <= pow; i++) {
+			poly.addAll(raiseToPower2(init, i));
+		}
+		return poly;
+	}
+	
+	private static List<Double> raiseToPower2(double[] init, int pow) {
+		List<Double> poly = new ArrayList<Double>();
+		List<List<Integer>> combos = new ArrayList<List<Integer>>();
+		for (int i = 0; i < init.length; i++) {
+			poly.add(init[i]);
+			combos.add(asList(i));
+		}
+		for (int p = 2; p <= pow; p++) {
+			List<Double> origPoly = new ArrayList<Double>(poly);
+			poly = new ArrayList<Double>();
+			for (int i = 0; i < origPoly.size(); i++) {
+				for (int j = 0; j < init.length; j++) {
+					List<Integer> newCombo = new ArrayList<Integer>(combos.get(i));
+					newCombo.add(j);
+					Collections.sort(newCombo);
+					if (!combos.contains(newCombo)) {
+						poly.add(init[j] * origPoly.get(i));
+						combos.add(newCombo);
+					}
+				}
+			}
+			List<List<Integer>> oldCombos = new ArrayList<List<Integer>>(combos);
+			combos = new ArrayList<List<Integer>>();
+			for (int i = 0; i < oldCombos.size(); i++) {
+				if (oldCombos.get(i).size() == p) {
+					combos.add(oldCombos.get(i));
+				}
+			}
+		}
+		return poly;
+	}
+
+	private static List<Integer> asList(int... is) {
+		List<Integer> res = new ArrayList<Integer>();
+		for (int i : is) {
+			res.add(i);
+		}
+		Collections.sort(res);
+		return res;
+	}
 }

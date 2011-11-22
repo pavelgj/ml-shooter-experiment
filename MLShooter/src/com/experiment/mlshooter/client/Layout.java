@@ -29,6 +29,9 @@ public class Layout extends Composite {
 	Button importThetaButton;
 	
 	@UiField
+	Button runRegressionButton;
+	
+	@UiField
 	Button exportDataButton;
 	
 	@UiField
@@ -56,6 +59,10 @@ public class Layout extends Composite {
 
 	public Button getImportThetaButton() {
 		return importThetaButton;
+	}
+	
+	public Button getRunRegressionButton() {
+		return runRegressionButton;
 	}
 	
 	public Button getExportDataButton() {
