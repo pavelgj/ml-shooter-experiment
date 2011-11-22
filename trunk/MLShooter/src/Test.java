@@ -2,11 +2,12 @@ import java.util.List;
 
 import com.experiment.mlshooter.client.LogisticaRegression;
 import com.experiment.mlshooter.client.MLShooterEntryPoint;
+import com.experiment.mlshooter.client.Utils;
 
 public class Test {
 
 	public static void main(String[] args) {
-		List<Double> raiseToPower = MLShooterEntryPoint.raiseToPower(new double[]{2, 3}, 5);
+		List<Double> raiseToPower = Utils.generatePolynomialFeatures(new double[]{2, 3}, 5);
 		System.out.println(raiseToPower.size());
 		System.out.println(raiseToPower.toString());
 	}
@@ -112,7 +113,7 @@ public class Test {
 		
 		double[][] Xpow = new double[X.length][n];
 		for (int i = 0; i < X.length; i++) {
-			List<Double> raiseToPower = MLShooterEntryPoint.raiseToPower(X[i], 3);
+			List<Double> raiseToPower = Utils.generatePolynomialFeatures(X[i], 3);
 			for (int j = 0; j < raiseToPower.size(); j++) {
 				Xpow[i][j] = raiseToPower.get(j);
 			}

@@ -11,8 +11,7 @@ import org.apache.commons.math.linear.RealMatrix;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.RealConvergenceChecker;
 import org.apache.commons.math.optimization.RealPointValuePair;
-import org.apache.commons.math.optimization.general.ConjugateGradientFormula;
-import org.apache.commons.math.optimization.general.NonLinearConjugateGradientOptimizer;
+import org.apache.commons.math.optimization.direct.PowellOptimizer;
 
 public class LogisticaRegression {
 
@@ -26,14 +25,17 @@ public class LogisticaRegression {
 		final CostFunction J = new CostFunction(X, y, lambda);
 		final DerivativeCostFunction Jgrad = new DerivativeCostFunction(X, y, lambda);
 		
-		NonLinearConjugateGradientOptimizer optimizer = new NonLinearConjugateGradientOptimizer(ConjugateGradientFormula.FLETCHER_REEVES);
-		optimizer.setInitialStep(10);
+		PowellOptimizer optimizer = new PowellOptimizer();
 		optimizer.setMaxIterations(200);
 		optimizer.setConvergenceChecker(new RealConvergenceChecker() {
 			
 			@Override
 			public boolean converged(int iteration, RealPointValuePair previous, RealPointValuePair current) {
-				return Math.abs(current.getValue() - previous.getValue()) < 0.00001;
+				System.out.println("Iter " + iteration + " J=" + current.getValue());
+				if (Double.isNaN(current.getValue())) {
+					return true;
+				}
+				return iteration >= 100;
 			}
 		});
 		
@@ -41,7 +43,6 @@ public class LogisticaRegression {
 			@Override
 			public double value(double[] point) throws FunctionEvaluationException, IllegalArgumentException {
 				double value = J.value(point);
-				System.out.println("step " + value);
 				return value;
 			}
 			

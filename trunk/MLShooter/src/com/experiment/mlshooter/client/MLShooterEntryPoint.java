@@ -1,7 +1,6 @@
 package com.experiment.mlshooter.client;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.math.stat.StatUtils;
@@ -15,10 +14,6 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.event.dom.client.MouseMoveEvent;
 import com.google.gwt.event.dom.client.MouseMoveHandler;
-import com.google.gwt.event.dom.client.MouseOutEvent;
-import com.google.gwt.event.dom.client.MouseOutHandler;
-import com.google.gwt.event.dom.client.MouseOverEvent;
-import com.google.gwt.event.dom.client.MouseOverHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
@@ -34,13 +29,11 @@ public class MLShooterEntryPoint implements EntryPoint {
 	private static final int POLY_POW = 5;
 	
 	private float barrelRotationDgrees = 0;
-	private boolean mouseOver = false;
 	private int mouseX;
 	private int mouseY;
 	private ShooterEngine engine;
 	private long lastStepTime = -1;
 	private List<Double[]> rawData = new ArrayList<Double[]>();
-	private List<Double[]> data = new ArrayList<Double[]>();
 	private Layout layout;
 	private boolean autoPilotOn;
 	private boolean randomShooterOn;
@@ -50,7 +43,7 @@ public class MLShooterEntryPoint implements EntryPoint {
 	private float accuracy0 = 0;
 	private float accuracy1 = 0;
 	private List<Long> destroyedTargets = new ArrayList<Long>();
-	private double lambda = 1;
+	private double lambda = 0;
 	private static double means[] = new double[DATA_POINTS];
 	private static double sigmas[] = new double[DATA_POINTS];
 	
@@ -170,6 +163,15 @@ public class MLShooterEntryPoint implements EntryPoint {
 			}
 		});
 		
+		layout.getRunRegressionButton().addClickHandler(new ClickHandler() {
+			
+			@Override
+			public void onClick(ClickEvent event) {
+				lambda = Double.parseDouble(Window.prompt("Lambda:", "" + lambda));
+				regress(lambda);
+			}
+		});
+		
 		layout.getExportDataButton().addClickHandler(new ClickHandler() {
 			
 			@Override
@@ -210,20 +212,6 @@ public class MLShooterEntryPoint implements EntryPoint {
 			}
 		}.scheduleRepeating(20);
 		
-		canvas.addMouseOverHandler(new MouseOverHandler() {
-			@Override
-			public void onMouseOver(MouseOverEvent event) {
-				mouseOver = true;				
-			}
-		});
-		
-		canvas.addMouseOutHandler(new MouseOutHandler() {
-			@Override
-			public void onMouseOut(MouseOutEvent event) {
-				mouseOver = false;				
-			}
-		});
-		
 		canvas.addMouseMoveHandler(new MouseMoveHandler() {
 			
 			@Override
@@ -231,7 +219,6 @@ public class MLShooterEntryPoint implements EntryPoint {
 				if (autoPilotOn) {
 					return;
 				}
-				mouseOver = true;				
 				mouseX = event.getRelativeX(canvas.getElement());
 				mouseY = event.getRelativeY(canvas.getElement());
 				
@@ -284,34 +271,35 @@ public class MLShooterEntryPoint implements EntryPoint {
 	}
 	
 
-	private void regress_no_using(double lambda) {
-		if (data.size() < 10) {
+	private void regress(double lambda) {
+		if (rawData.size() < 10) {
 			return;
 		}
 		
-		double[][] X = new double[data.size()][FEATURES_N];
-		for (int i = 0; i < data.size(); i++) {
-			for (int j = 0; j < FEATURES_N; j++) {
-				X[i][j] = (double) data.get(i)[j];
+		double[][] X = new double[rawData.size()][DATA_POINTS];
+		for (int i = 0; i < rawData.size(); i++) {
+			for (int j = 0; j < DATA_POINTS; j++) {
+				X[i][j] = (double) rawData.get(i)[j];
 			}
 		}
 		
-		normalize(X, data.size(), FEATURES_N);
-		for (int i = 0; i < X.length; i++) {
-			for (int j = 0; j < X[i].length; j++) {
-				System.out.print(X[i][j] + "\t");
-			}
-			System.out.println();
-		}
-		
-		
-		double[] y = new double[data.size()];
+		double[] y = new double[rawData.size()];
 		for (int i = 0; i < y.length; i++) {
-			y[i] = data.get(i)[FEATURES_N];
+			y[i] = rawData.get(i)[DATA_POINTS];
+		}
+		
+		normalize(X, rawData.size(), DATA_POINTS);
+		
+		double[][] Xpow = new double[rawData.size()][FEATURES_N];
+		for (int i = 0; i < rawData.size(); i++) {
+			List<Double> poly = Utils.generatePolynomialFeatures(X[i], POLY_POW);
+			for (int j = 0; j < poly.size(); j++) {
+				Xpow[i][j] = poly.get(j);
+			}
 		}
 		
 		try {
-			latestTheta = LogisticaRegression.regress(X, y, lambda);
+			latestTheta = LogisticaRegression.regress(Xpow, y, lambda);
 			for (double d : latestTheta) {
 				System.out.print(d + ",");
 			}
@@ -347,9 +335,9 @@ public class MLShooterEntryPoint implements EntryPoint {
 					}
 				}
 			}
-			accuracy = (fault / (float)count) * 100;
-			accuracy0 = (fault0 / (float)count0) * 100;
-			accuracy1 = (fault1 / (float)count1) * 100;
+			accuracy = 100 - (fault / (float)count) * 100;
+			accuracy0 = 100 - (fault0 / (float)count0) * 100;
+			accuracy1 = 100 - (fault1 / (float)count1) * 100;
 			updateConsole();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -384,11 +372,11 @@ public class MLShooterEntryPoint implements EntryPoint {
 			thetaStr.append(d);
 		}
 		layout.setConsoleHtml("<h3>Stats</h3>" +
-				"<div>m=" + data.size() + "</div>" +
+				"<div>m=" + rawData.size() + "</div>" +
 				"<div>lambda=" + lambda + "</div>" +
-				"<div>fault=" + (int)accuracy + "%</div>" +
-				"<div>fault0=" + (int)accuracy0 + "%</div>" +
-				"<div>fault1=" + (int)accuracy1 + "%</div><small>" + thetaStr + "</small>");
+				"<div>accuracy=" + (int)accuracy + "%</div>" +
+				"<div>accuracy0=" + (int)accuracy0 + "%</div>" +
+				"<div>accuracy1=" + (int)accuracy1 + "%</div><small>" + thetaStr + "</small>");
 	}
 	
 	private boolean maybeShoot(float barrelRotationDgrees) {
@@ -410,7 +398,7 @@ public class MLShooterEntryPoint implements EntryPoint {
 			}
 			System.out.println();
 
-			List<Double> poly = raiseToPower(init, POLY_POW);
+			List<Double> poly = Utils.generatePolynomialFeatures(init, POLY_POW);
 			double[] res = new double[poly.size()];
 			for (int j = 0; j < res.length; j++) {
 				res[j] = poly.get(j);
@@ -438,56 +426,6 @@ public class MLShooterEntryPoint implements EntryPoint {
 			}
 		}
 		return false;
-	}
-	
-	public static List<Double> raiseToPower(double[] init, int pow) {
-		List<Double> poly = new ArrayList<Double>();
-		poly.add(1d);
-		for (int i = 1; i <= pow; i++) {
-			poly.addAll(raiseToPower2(init, i));
-		}
-		return poly;
-	}
-	
-	public static List<Double> raiseToPower2(double[] init, int pow) {
-		List<Double> poly = new ArrayList<Double>();
-		List<List<Integer>> combos = new ArrayList<List<Integer>>();
-		for (int i = 0; i < init.length; i++) {
-			poly.add(init[i]);
-			combos.add(asList(i));
-		}
-		for (int p = 2; p <= pow; p++) {
-			List<Double> origPoly = new ArrayList<Double>(poly);
-			poly = new ArrayList<Double>();
-			for (int i = 0; i < origPoly.size(); i++) {
-				for (int j = 0; j < init.length; j++) {
-					List<Integer> newCombo = new ArrayList<Integer>(combos.get(i));
-					newCombo.add(j);
-					Collections.sort(newCombo);
-					if (!combos.contains(newCombo)) {
-						poly.add(init[j] * origPoly.get(i));
-						combos.add(newCombo);
-					}
-				}
-			}
-			List<List<Integer>> oldCombos = new ArrayList<List<Integer>>(combos);
-			combos = new ArrayList<List<Integer>>();
-			for (int i = 0; i < oldCombos.size(); i++) {
-				if (oldCombos.get(i).size() == p) {
-					combos.add(oldCombos.get(i));
-				}
-			}
-		}
-		return poly;
-	}
-
-	private static List<Integer> asList(int... is) {
-		List<Integer> res = new ArrayList<Integer>();
-		for (int i : is) {
-			res.add(i);
-		}
-		Collections.sort(res);
-		return res;
 	}
 
 	private void draw(final Canvas canvas, List<Collision> collisions) {
@@ -591,14 +529,13 @@ public class MLShooterEntryPoint implements EntryPoint {
 			if (Double.isNaN(z)) 
 				return;
 		}
-		if (d[1] < -1.57 || d[1] > -0.001) {
+		if (d[0] < -1.57 || d[0] > -0.001) {
 			return;
 		}
-		if (d[2] > 1500) {
+		if (d[0] > 1500) {
 			return;
 		}
-		rawData.add(new Double[]{d[1], d[2], d[FEATURES_N]});
-		data.add(d);
+		rawData.add(d);
 		updateConsole();
 	}
 
@@ -613,30 +550,22 @@ public class MLShooterEntryPoint implements EntryPoint {
 	}
 
 	private Double[] compileData(Bullet b, Target t, boolean outcome) {
-		double[] init = new double[DATA_POINTS];
+		Double[] init = new Double[DATA_POINTS + 1];
 		int i = 0;
-		init[i++] = Math.toRadians(Math.toDegrees(b.rotation) - 360);
+		double bulletRotation;
+		if (b.rotation > 0) {
+			bulletRotation = Math.toRadians(Math.toDegrees(b.rotation) - 360);
+		} else {
+			bulletRotation = b.rotation;
+		}
+		
+		init[i++] = bulletRotation;
 		init[i++] = (double) t.x;
 //		init[i++] = (double) t.y;
 //		init[i++] = t.rotation;
+		init[DATA_POINTS] = outcome ? 1d : 0d;
 		
-		
-		System.out.print("compileData data: ");
-		for (double d : init) {
-			System.out.print(d + ", ");
-		}
-		System.out.println();
-
-		
-		List<Double> poly = raiseToPower(init, POLY_POW);
-		Double[] res = new Double[FEATURES_N + 1];
-		for (int j = 0; j < poly.size() ; j++) {
-			res[j] = poly.get(j);
-		}
-		
-		res[FEATURES_N] = outcome ? 1d : 0d;
-		
-		return res;
+		return init;
 	}
 
 	private void updateResize(final Canvas canvas) {
