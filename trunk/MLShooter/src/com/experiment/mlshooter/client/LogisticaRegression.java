@@ -35,7 +35,7 @@ public class LogisticaRegression {
 				if (Double.isNaN(current.getValue())) {
 					return true;
 				}
-				return iteration >= 100;
+				return iteration >= 200;
 			}
 		});
 		

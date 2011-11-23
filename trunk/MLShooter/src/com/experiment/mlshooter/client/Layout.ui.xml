@@ -17,7 +17,6 @@
 				ML Shooter Experiment
 				<g:Button ui:field="autoPilotButton" addStyleNames="{style.button}">Auto-Pilot Off</g:Button>
 				<g:Button ui:field="randomShooterButton" addStyleNames="{style.button}">Random Shoter Off</g:Button>
-				<g:Button ui:field="importThetaButton" addStyleNames="{style.button}">Import Theta</g:Button>
 				<g:Button ui:field="runRegressionButton" addStyleNames="{style.button}">Run Regression</g:Button>
 				<g:Button ui:field="exportDataButton" addStyleNames="{style.button}">Export Data</g:Button>
 			</g:HTMLPanel>

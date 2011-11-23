@@ -5,8 +5,8 @@ import com.experiment.mlshooter.client.Utils;
 
 public class Test {
 
-	public static void main2(String[] args) {
-		List<Double> raiseToPower = Utils.generatePolynomialFeatures(new double[]{2, 3}, 5);
+	public static void main(String[] args) {
+		List<Double> raiseToPower = Utils.generatePolynomialFeatures(new double[]{2, 3, 4, 5, 6}, 3);
 		System.out.println(raiseToPower.size());
 		System.out.println(raiseToPower.toString());
 	}
@@ -32,7 +32,7 @@ public class Test {
 		}
 	}
 	
-	public static void main(String[] args) throws Exception {
+	public static void main2(String[] args) throws Exception {
 		double[][] X = new double[][]{
 			{ 0.08876232511005902, 129.99996948242188},
 			{ 0.09727473885381215, 346.0002746582031},
