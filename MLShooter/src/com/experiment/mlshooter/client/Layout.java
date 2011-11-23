@@ -26,9 +26,6 @@ public class Layout extends Composite {
 	Button randomShooterButton;
 	
 	@UiField
-	Button importThetaButton;
-	
-	@UiField
 	Button runRegressionButton;
 	
 	@UiField
@@ -57,10 +54,6 @@ public class Layout extends Composite {
 		return randomShooterButton;
 	}
 
-	public Button getImportThetaButton() {
-		return importThetaButton;
-	}
-	
 	public Button getRunRegressionButton() {
 		return runRegressionButton;
 	}

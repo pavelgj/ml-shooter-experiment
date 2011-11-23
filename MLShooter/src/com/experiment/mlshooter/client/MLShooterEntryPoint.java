@@ -23,9 +23,9 @@ import com.google.gwt.user.client.ui.TextArea;
 
 public class MLShooterEntryPoint implements EntryPoint {
 
-	private static final int DATA_POINTS = 2;
-	private static final int FEATURES_N = 21;
-	private static final int POLY_POW = 5;
+	private static final int DATA_POINTS = 5;
+	private static final int FEATURES_N = 56;
+	private static final int POLY_POW = 3;
 	
 	private float barrelRotationDgrees = 0;
 	private int mouseX;
@@ -82,107 +82,21 @@ public class MLShooterEntryPoint implements EntryPoint {
 			}
 		});
 		
-		layout.getImportThetaButton().addClickHandler(new ClickHandler() {
-			@Override
-			public void onClick(ClickEvent event) {
-				// ask for thetas
-				StringBuffer init = new StringBuffer();
-				for (int i = 0; i < FEATURES_N; i++) {
-					if (init.length() > 0) {
-						init.append(",");
-					}
-					init.append(latestTheta[i]);
-				}
-				String promptVal = Window.prompt("Comma separated list of theta values:", init.toString());
-				String[] tkns = promptVal.split(",");
-				if (tkns.length != FEATURES_N) {
-					Window.alert("Expecting " + FEATURES_N + " theta values but got " + tkns.length + "!");
-					return;
-				}
-				double[] tmpTheta = new double[FEATURES_N];
-				for (int i = 0; i < tkns.length; i++) {
-					try {
-						tmpTheta[i] = Double.parseDouble(tkns[i].trim());
-					} catch (Exception e) {
-						Window.alert("Unable to path value #" + i + ": " + tkns[i]);
-						return;
-					}
-				}
-				latestTheta = tmpTheta;
-				
-				// ask for means
-				init = new StringBuffer();
-				for (int i = 0; i < DATA_POINTS; i++) {
-					if (init.length() > 0) {
-						init.append(",");
-					}
-					init.append(means[i]);
-				}
-				promptVal = Window.prompt("Comma separated list of normalization means:", init.toString());
-				tkns = promptVal.split(",");
-				if (tkns.length != DATA_POINTS) {
-					Window.alert("Expecting " + DATA_POINTS + " mean values but got " + tkns.length + "!");
-					return;
-				}
-				double[] tmpMeans = new double[DATA_POINTS];
-				for (int i = 0; i < tkns.length; i++) {
-					try {
-						tmpMeans[i] = Double.parseDouble(tkns[i].trim());
-					} catch (Exception e) {
-						Window.alert("Unable to path value #" + i + ": " + tkns[i]);
-						return;
-					}
-				}
-				means = tmpMeans;
-				
-				// ask for variance
-				init = new StringBuffer();
-				for (int i = 0; i < DATA_POINTS; i++) {
-					if (init.length() > 0) {
-						init.append(",");
-					}
-					init.append(sigmas[i]);
-				}
-				promptVal = Window.prompt("Comma separated list of normalization sigmas:", init.toString());
-				tkns = promptVal.split(",");
-				if (tkns.length != DATA_POINTS) {
-					Window.alert("Expecting " + DATA_POINTS + " sigma values but got " + tkns.length + "!");
-					return;
-				}
-				double[] tmpSigmas = new double[DATA_POINTS];
-				for (int i = 0; i < tkns.length; i++) {
-					try {
-						tmpSigmas[i] = Double.parseDouble(tkns[i].trim());
-					} catch (Exception e) {
-						Window.alert("Unable to path value #" + i + ": " + tkns[i]);
-						return;
-					}
-				}
-				sigmas = tmpSigmas;
-			}
-		});
-		
 		layout.getRunRegressionButton().addClickHandler(new ClickHandler() {
 			
 			@Override
 			public void onClick(ClickEvent event) {
-				lambda = Double.parseDouble(Window.prompt("Lambda:", "" + lambda));
+				regressApplet(compileExport(), "" + lambda);
+/*				lambda = Double.parseDouble(Window.prompt("Lambda:", "" + lambda));
 				regress(lambda);
-			}
+*/			}
 		});
 		
 		layout.getExportDataButton().addClickHandler(new ClickHandler() {
 			
 			@Override
 			public void onClick(ClickEvent event) {
-				StringBuilder res = new StringBuilder();
-				for (int m = 0; m < rawData.size(); m++) {
-					for (int n = 0; n < DATA_POINTS; n++) {
-						res.append(" " + rawData.get(m)[n]);
-					}
-					res.append(" " + rawData.get(m)[DATA_POINTS]);
-					res.append("\n");
-				}
+				String res = compileExport();
 				
 				PopupPanel popup = new PopupPanel(true, true);
 				TextArea area = new TextArea();
@@ -269,7 +183,22 @@ public class MLShooterEntryPoint implements EntryPoint {
 		}.scheduleRepeating(100);
 	}
 	
+	private native void regressApplet(String exportData, String lambda)/*-{
+		$wnd.alert($doc.regressionApplet.regress(exportData));
+	}-*/;
 
+	private String compileExport() {
+		StringBuilder res = new StringBuilder();
+		for (int m = 0; m < rawData.size(); m++) {
+			for (int n = 0; n < DATA_POINTS; n++) {
+				res.append(" " + rawData.get(m)[n]);
+			}
+			res.append(" " + rawData.get(m)[DATA_POINTS]);
+			res.append("\n");
+		}
+		return res.toString();
+	}
+	
 	private void regress(double lambda) {
 		if (rawData.size() < 10) {
 			return;
@@ -313,8 +242,8 @@ public class MLShooterEntryPoint implements EntryPoint {
 			int count1 = 0;
 			for (int i = 0; i < X.length; i++) {
 				double s = 0;
-				for (int j = 0; j < X[i].length; j++) {
-					s += latestTheta[j] * X[i][j];
+				for (int j = 0; j < Xpow[i].length; j++) {
+					s += latestTheta[j] * Xpow[i][j];
 				}
 				s = LogisticaRegression.sigmoid(s);
 				double prediction = s >= 0.5 ? 1 : 0;
@@ -347,19 +276,19 @@ public class MLShooterEntryPoint implements EntryPoint {
 	}
 
 	private void updateConsole() {
-		StringBuilder thetaStr = new StringBuilder();
+/*		StringBuilder thetaStr = new StringBuilder();
 		for (double d : latestTheta) {
 			if (thetaStr.length() > 0) {
 				thetaStr.append(", ");
 			}
 			thetaStr.append(d);
 		}
-		layout.setConsoleHtml("<h3>Stats</h3>" +
+*/		layout.setConsoleHtml("<h3>Stats</h3>" +
 				"<div>m=" + rawData.size() + "</div>" +
 				"<div>lambda=" + lambda + "</div>" +
 				"<div>accuracy=" + (int)accuracy + "%</div>" +
 				"<div>accuracy0=" + (int)accuracy0 + "%</div>" +
-				"<div>accuracy1=" + (int)accuracy1 + "%</div><small>" + thetaStr + "</small>");
+				"<div>accuracy1=" + (int)accuracy1 + "%</div>");
 	}
 	
 	private boolean maybeShoot(float barrelRotationDgrees) {
@@ -368,8 +297,9 @@ public class MLShooterEntryPoint implements EntryPoint {
 			int i = 0;
 			init[i++] = Math.toRadians(-barrelRotationDgrees);
 			init[i++] = (double) t.x;
-//			init[i++] = (double) t.y;
-//			init[i++] = t.rotation;
+			init[i++] = (double) t.y;
+			init[i++] = (double) t.speed;
+			init[i++] = t.rotation;
 			
 			for (int j = 0; j < init.length; j++) {
 				init[j] = (init[j] - means[j]) / sigmas[j];
@@ -544,8 +474,9 @@ public class MLShooterEntryPoint implements EntryPoint {
 		
 		init[i++] = bulletRotation;
 		init[i++] = (double) t.x;
-//		init[i++] = (double) t.y;
-//		init[i++] = t.rotation;
+		init[i++] = (double) t.y;
+		init[i++] = (double) t.speed;
+		init[i++] = t.rotation;
 		init[DATA_POINTS] = outcome ? 1d : 0d;
 		
 		return init;

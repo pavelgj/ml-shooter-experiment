@@ -41,7 +41,7 @@ public class ShooterEngine {
 		float timeFactor = milis / 1000f;
 		for (MovingObject obj : objects) {
 			float speedX = (float) (Math.cos(obj.rotation) * obj.speed);
-			float speedY = (float) (Math.sin(obj.rotation) * obj.speed /*+ obj.mass * G * timeFactor*/);
+			float speedY = (float) (Math.sin(obj.rotation) * obj.speed + obj.mass * G * timeFactor);
 			
 			double acos = Math.acos(speedX / Math.sqrt(speedX * speedX + speedY * speedY));
 			double asin = Math.asin(speedY / Math.sqrt(speedX * speedX + speedY * speedY));
