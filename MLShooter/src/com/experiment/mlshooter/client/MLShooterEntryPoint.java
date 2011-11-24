@@ -183,8 +183,19 @@ public class MLShooterEntryPoint implements EntryPoint {
 		}.scheduleRepeating(100);
 	}
 	
-	private native void regressApplet(String exportData, String lambda)/*-{
-		$wnd.alert($doc.regressionApplet.regress(exportData));
+	private void regressApplet(String exportData, String lambda) {
+		String dataStr = regressAppletCall(exportData, lambda);
+		String[] split = dataStr.split("#");
+		latestTheta = Utils.split(split[0], ",");
+		means = Utils.split(split[1], ",");
+		sigmas = Utils.split(split[2], ",");
+		accuracy = Float.parseFloat(split[3]);
+		accuracy0 = Float.parseFloat(split[4]);
+		accuracy1 = Float.parseFloat(split[5]);
+	}
+	
+	private native String regressAppletCall(String exportData, String lambda)/*-{
+		return $doc.regressionApplet.regress(exportData);
 	}-*/;
 
 	private String compileExport() {
@@ -344,15 +355,15 @@ public class MLShooterEntryPoint implements EntryPoint {
 	private void draw(final Canvas canvas, List<Collision> collisions) {
 		updateResize(canvas);
 		
-		if (autoPilotOn) {
+		if (autoPilotOn || randomShooterOn) {
 			if (goingUp) {
 				barrelRotationDgrees += 2 + 2 * Math.random();
-				if (barrelRotationDgrees >= 90) {
+				if (barrelRotationDgrees >= 85) {
 					goingUp = false;
 				}
 			} else {
 				barrelRotationDgrees -= 2 + 2 * Math.random();
-				if (barrelRotationDgrees < 10) {
+				if (barrelRotationDgrees < 1) {
 					goingUp = true;
 				}
 			}

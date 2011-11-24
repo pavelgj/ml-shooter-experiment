@@ -223,4 +223,24 @@ public class Utils {
 			return variance;
 		}
 	}
+
+	public static String join(double[] arr, String by) {
+		StringBuffer res = new StringBuffer();
+		for (int i = 0; i < arr.length; i++) {
+			res.append(arr[i]);
+			if (i + 1 < arr.length) {
+				res.append(by);
+			}
+		}
+		return res.toString();
+	}
+	
+	public static double[] split(String in, String by) {
+		String[] split = in.split(by);
+		double[] res = new double[split.length];
+		for (int i = 0; i < split.length; i++) {
+			res[i] = Double.parseDouble(split[i]);
+		}
+		return res;
+	}
 }

@@ -75,35 +75,13 @@ public class RegressionApplet extends Applet {
 			float accuracy = 100 - (fault / (float)count) * 100;
 			float accuracy0 = 100 - (fault0 / (float)count0) * 100;
 			float accuracy1 = 100 - (fault1 / (float)count1) * 100;
-			StringBuffer res = new StringBuffer("{");
-			res.append("theta='");
-			for (int i = 0; i < latestTheta.length; i++) {
-				res.append(latestTheta[i]);
-				if (i + 1 < latestTheta.length) {
-					res.append(",");
-				}
-			}
-			res.append("',");
-			res.append("means='");
-			for (int i = 0; i < means.length; i++) {
-				res.append(means[i]);
-				if (i + 1 < means.length) {
-					res.append(",");
-				}
-			}
-			res.append("',");
-			res.append("variance='");
-			for (int i = 0; i < sigmas.length; i++) {
-				res.append(sigmas[i]);
-				if (i + 1 < sigmas.length) {
-					res.append(",");
-				}
-			}
-			res.append("',");
-			res.append("accuracy='" + accuracy + "',");
-			res.append("accuracy0='" + accuracy0 + "',");
-			res.append("accuracy1='" + accuracy1 + "',");
-			res.append("}");
+			StringBuffer res = new StringBuffer();
+			res.append(Utils.join(latestTheta, ",") + "#");
+			res.append(Utils.join(means, ",") + "#");
+			res.append(Utils.join(sigmas, ",") + "#");
+			res.append(accuracy + "#");
+			res.append(accuracy0 + "#");
+			res.append(accuracy1);
 			
 			return res.toString();
 		} catch (Exception e) {
