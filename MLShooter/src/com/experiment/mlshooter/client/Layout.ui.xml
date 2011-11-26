@@ -15,16 +15,17 @@
 		<g:north size="40">
 			<g:HTMLPanel addStyleNames="{style.title}">
 				ML Shooter Experiment
-				<g:Button ui:field="autoPilotButton" addStyleNames="{style.button}">Auto-Pilot Off</g:Button>
-				<g:Button ui:field="randomShooterButton" addStyleNames="{style.button}">Random Shoter Off</g:Button>
-				<g:Button ui:field="runRegressionButton" addStyleNames="{style.button}">Run Regression</g:Button>
-				<g:Button ui:field="exportDataButton" addStyleNames="{style.button}">Export Data</g:Button>
+
+				<div style="float: right;">
+					<g:Button ui:field="autoPilotButton" addStyleNames="{style.button}">Auto-Pilot Off</g:Button>
+					<g:Button ui:field="randomShooterButton" addStyleNames="{style.button}">Random Shoter Off</g:Button>
+					<g:Button ui:field="runRegressionButton" addStyleNames="{style.button}" visible="false">Run Regression</g:Button>
+					<g:Button ui:field="exportDataButton" addStyleNames="{style.button}">Export Data</g:Button>
+				</div>				
 			</g:HTMLPanel>
 		</g:north>
 		<g:east size="200">
-			<g:ScrollPanel>
-				<g:HTML ui:field="console"/>
-			</g:ScrollPanel>
+			<g:HTML ui:field="console"/>
 		</g:east>
 		<g:center>
 			<c:Canvas width="100%" height="100%" ui:field="canvas"/>

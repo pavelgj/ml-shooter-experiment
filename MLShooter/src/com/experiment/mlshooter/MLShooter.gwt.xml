@@ -3,7 +3,7 @@
 <module rename-to="mlshooter">
 	<inherits name="com.google.gwt.user.User" />
 	<inherits name="org.apache.commons.Math" />
-
+	<inherits name="com.google.gwt.user.theme.dark.Dark" />
 	<source path="client" />
 	<entry-point class="com.experiment.mlshooter.client.MLShooterEntryPoint" />
 </module>

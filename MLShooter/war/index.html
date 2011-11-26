@@ -3,25 +3,74 @@
   <head>
     <meta http-equiv="content-type" content="text/html; charset=UTF-8">
     <link type="text/css" rel="stylesheet" href="mlshooter.css">
-    <title>Web Application Starter Project</title>
-    <script type="text/javascript" language="javascript" src="mlshooter/mlshooter.nocache.js"></script>
+    <title>ML Shooter Experiment</title>
+    <style>
+    	.messageBox {
+    		margin: auto;
+    		margin-top: 50px;
+    		width: 800px;
+    		border: 1px solid #444;
+    		padding: 20px;
+    		border-radius: 15px;
+    		background-color: #222;
+    		box-shadow: -5px -5px 10px #444;
+    	}
+    	
+    	.title {
+    		font-size: 20px;
+    	}
+    	
+    	.playButton {
+    		border: 1px solid #444;
+    		padding: 15px 20px;
+    		display: block;
+    		border-radius: 5px;
+    		margin: 0 auto;
+    		font-size: 20px;
+    		width: 200px;
+    		text-align: center;'
+			background: #3b679e; /* Old browsers */
+			background: -moz-linear-gradient(top,  #3b679e 0%, #2b88d9 50%, #207cca 51%, #7db9e8 100%); /* FF3.6+ */
+			background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,#3b679e), color-stop(50%,#2b88d9), color-stop(51%,#207cca), color-stop(100%,#7db9e8)); /* Chrome,Safari4+ */
+			background: -webkit-linear-gradient(top,  #3b679e 0%,#2b88d9 50%,#207cca 51%,#7db9e8 100%); /* Chrome10+,Safari5.1+ */
+			background: -o-linear-gradient(top,  #3b679e 0%,#2b88d9 50%,#207cca 51%,#7db9e8 100%); /* Opera 11.10+ */
+			background: -ms-linear-gradient(top,  #3b679e 0%,#2b88d9 50%,#207cca 51%,#7db9e8 100%); /* IE10+ */
+			background: linear-gradient(top,  #3b679e 0%,#2b88d9 50%,#207cca 51%,#7db9e8 100%); /* W3C */
+			filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#3b679e', endColorstr='#7db9e8',GradientType=0 ); /* IE6-9 */
+		}
+    </style>
   </head>
   <body>
-    <iframe src="javascript:''" id="__gwt_historyFrame" tabIndex='-1' style="position:absolute;width:0;height:0;border:0"></iframe>
-    <!-- RECOMMENDED if your web app will not function without JavaScript enabled -->
-    <noscript>
-      <div style="width: 22em; position: absolute; left: 50%; margin-left: -11em; color: red; background-color: white; border: 1px solid red; padding: 4px; font-family: sans-serif">
-        Your web browser must have JavaScript enabled
-        in order for this application to display correctly.
-      </div>
-    </noscript>
-    <div style="display: none;">
-    	<img alt="" src="images/cannon_barrel.png" id="img_cannon_barrel">
-    	<img alt="" src="images/cannon_base.png" id="img_cannon_base">
-    	<img alt="" src="images/moon.png" id="img_moon">
-    	<img alt="" src="images/rocket.png" id="img_rocket">
-    	<img alt="" src="images/bullet.png" id="img_bullet">
-    </div>
-    <APPLET name="regressionApplet" codebase="." code="RegressionApplet.class" archive="regression.jar" WIDTH="0" HEIGHT="0"></APPLET>
+  	<div class="messageBox">
+  		<h1 class="title">ML Shooter Experiment</h1>
+  		<p>
+  			This is an implementation of the Logistical Regression algorithm applied to a simple target shooting game. 
+  			A target rockets across the sky and the goal is for the learning algorithm to train to accurately shoot the target down.
+  		</p>
+  		<p>
+  			If you are curious about the algorithms used in this game, visit <a href="http://www.ml-class.org" target="_new">www.ml-class.org</a>
+  		</p>
+  		<p>
+  			The game is using a Java Applet to run the logistical regression, so please make sure you have a recent version of Java installed and
+  			that you do not have any browser plugins that prevent your browser from executing Java Applets.
+		</p>
+		<h3>How to Play?</h3>
+		<p>
+			You will need to provide some training examples for the algorithms to learn from. Start by trying to shoot the targets yourself.
+			Once you have collected a number of training samples (ex. 50), you can try engaging the Auto-Pilot. If you notice that that Auto-Pilot
+			is not very accurate or too hesitant, try collecting some more training data. You can use the "Random Shooter" button to make the cannon shoot "randomly"
+			and try to automatically collect training data.
+		</p>
+		<p>
+			<b>Hint:</b> a miss, thought might be damaging to the shooter's ego, is still very valuable information for the learning algorithm. So don't try to be perfect.
+		</p>
+		
+		<!-- Place this tag where you want the +1 button to render -->
+		<div class="g-plusone"></div>
+		<a href="https://twitter.com/share" class="twitter-share-button" data-count="horizontal">Tweet</a><script type="text/javascript" src="//platform.twitter.com/widgets.js"></script>
+  		<a href="play.html" class="playButton">Start Playing</a>
+  	</div>
+	<!-- Place this tag in your head or just before your close body tag -->
+	<script type="text/javascript" src="https://apis.google.com/js/plusone.js"></script>
   </body>
 </html>
