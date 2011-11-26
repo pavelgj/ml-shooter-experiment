@@ -8,6 +8,8 @@ import com.google.gwt.canvas.client.Canvas;
 import com.google.gwt.canvas.dom.client.Context2d;
 import com.google.gwt.canvas.dom.client.CssColor;
 import com.google.gwt.core.client.EntryPoint;
+import com.google.gwt.core.client.Scheduler;
+import com.google.gwt.core.client.Scheduler.ScheduledCommand;
 import com.google.gwt.dom.client.ImageElement;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
@@ -16,7 +18,9 @@ import com.google.gwt.event.dom.client.MouseMoveHandler;
 import com.google.gwt.user.client.DOM;
 import com.google.gwt.user.client.Timer;
 import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.DecoratedPopupPanel;
 import com.google.gwt.user.client.ui.HTML;
+import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.PopupPanel;
 import com.google.gwt.user.client.ui.RootLayoutPanel;
 import com.google.gwt.user.client.ui.TextArea;
@@ -37,7 +41,7 @@ public class MLShooterEntryPoint implements EntryPoint {
 	private boolean autoPilotOn;
 	private boolean randomShooterOn;
 	private boolean goingUp;
-	private double[] latestTheta = new double[FEATURES_N];
+	private double[] latestTheta = null;
 	private float accuracy = 0;
 	private float accuracy0 = 0;
 	private float accuracy1 = 0;
@@ -45,6 +49,9 @@ public class MLShooterEntryPoint implements EntryPoint {
 	private double lambda = 0;
 	private static double means[] = new double[DATA_POINTS];
 	private static double sigmas[] = new double[DATA_POINTS];
+	private int lastRegressionDataSize = 0;
+	private boolean regressionInProgress = false;
+	private int regressionWaitIterations = 0;
 	
 	@Override
 	public void onModuleLoad() {
@@ -68,8 +75,13 @@ public class MLShooterEntryPoint implements EntryPoint {
 			
 			@Override
 			public void onClick(ClickEvent event) {
-				autoPilotOn = !autoPilotOn;
-				layout.getAutoPilotButton().setText(autoPilotOn ? "Auto-Pilot On" : "Auto-Pilot Off");
+				if (!autoPilotOn) {
+					invokeRegressionWithUI();
+				} else {
+					autoPilotOn = false;
+					layout.getAutoPilotButton().setText("Auto-Pilot Off");
+					layout.getRandomShooterButton().setEnabled(true);
+				}
 			}
 		});
 		
@@ -86,7 +98,7 @@ public class MLShooterEntryPoint implements EntryPoint {
 			
 			@Override
 			public void onClick(ClickEvent event) {
-				regressApplet(compileExport(), "" + lambda);
+				invokeRegressionWithUI();
 /*				lambda = Double.parseDouble(Window.prompt("Lambda:", "" + lambda));
 				regress(lambda);
 */			}
@@ -110,6 +122,7 @@ public class MLShooterEntryPoint implements EntryPoint {
 			}
 		});
 		
+		// main game step/render loop
 		new Timer() {
 			@Override
 			public void run() {
@@ -156,6 +169,7 @@ public class MLShooterEntryPoint implements EntryPoint {
 			}
 		});
 		
+		// target spawning loop
 		new Timer() {
 			@Override
 			public void run() {
@@ -164,6 +178,7 @@ public class MLShooterEntryPoint implements EntryPoint {
 			}
 		}.scheduleRepeating(2000);
 		
+		// random shooter loop
 		new Timer() {
 			@Override
 			public void run() {
@@ -173,6 +188,7 @@ public class MLShooterEntryPoint implements EntryPoint {
 			}
 		}.scheduleRepeating(200);
 		
+		// auto-pilot loop
 		new Timer() {
 			@Override
 			public void run() {
@@ -181,10 +197,81 @@ public class MLShooterEntryPoint implements EntryPoint {
 				}
 			}
 		}.scheduleRepeating(100);
+		
+		// auto-pilot re-training loop
+		new Timer() {
+			@Override
+			public void run() {
+				if (autoPilotOn && !regressionInProgress && rawData.size() - lastRegressionDataSize > 20) {
+					invokeRegressionWithUI();
+				}
+			}
+		}.scheduleRepeating(30000);
 	}
 	
-	private void regressApplet(String exportData, String lambda) {
-		String dataStr = regressAppletCall(exportData, lambda);
+	private void invokeRegressionWithUI() {
+		final PopupPanel popupPanel = new DecoratedPopupPanel(false, true);
+		Label w = new Label("Training...");
+		DOM.setStyleAttribute(w.getElement(), "fontSize", "25px");
+		DOM.setStyleAttribute(w.getElement(), "margin", "10px 30px");
+		popupPanel.setWidget(w);
+		popupPanel.show();
+		popupPanel.center();
+		Scheduler.get().scheduleDeferred(new ScheduledCommand() {
+			private Timer timer;
+
+			@Override
+			public void execute() {
+				lastRegressionDataSize = rawData.size();
+				if (!callRegressAppletCall(compileExport(), "" + lambda)) {
+					popupPanel.hide();
+					return;
+				}
+				regressionInProgress = true;
+				regressionWaitIterations = 0;
+				timer = new Timer() {
+					@Override
+					public void run() {
+						regressionWaitIterations++;
+						if (regressionWaitIterations > 200) {
+							Window.alert("Hmm... taking way too long. Look like you have too much data.");
+							popupPanel.hide();
+							regressionInProgress = false;
+							return;
+						}
+						String regressionResult = getRegressionResult();
+						if (regressionResult != null) {
+							if ("Error".equals(regressionResult)) {
+								Window.alert("Oops... and error occured while learning. Maybe try collection some more training data and try again.");
+								popupPanel.hide();
+								regressionInProgress = false;
+							} else {
+								try {
+									parseRegressionResult(regressionResult);
+									autoPilotOn = true;
+									randomShooterOn = false;
+									layout.getRandomShooterButton().setText("Random Shooter Off");
+									layout.getRandomShooterButton().setEnabled(false);
+									layout.getAutoPilotButton().setText("Auto-Pilot On");
+									updateConsole();
+								} catch (Exception e) {
+									Window.alert("Oops... and error occured while learning. Maybe try collection some more training data and try again.");
+								} finally {
+									popupPanel.hide();
+									regressionInProgress = false;
+								}
+							}
+						} else {
+							timer.schedule(1000);						
+						}
+					}
+				};
+				timer.schedule(1000);						
+			}
+		});
+	}
+	
+	private void parseRegressionResult(String dataStr) {
 		String[] split = dataStr.split("#");
 		latestTheta = Utils.split(split[0], ",");
 		means = Utils.split(split[1], ",");
@@ -194,8 +281,17 @@ public class MLShooterEntryPoint implements EntryPoint {
 		accuracy1 = Float.parseFloat(split[5]);
 	}
 	
-	private native String regressAppletCall(String exportData, String lambda)/*-{
-		return $doc.regressionApplet.regress(exportData);
+	private native boolean callRegressAppletCall(String exportData, String lambda)/*-{
+		if (!$doc.regressionApplet.regress) {
+			$wnd.alert("It appears you don't have the necessary Java applet running. Please make sure Java is installed and applets are enabled.");
+			return false;
+		}
+		$doc.regressionApplet.regress(exportData);
+		return true;
+	}-*/;
+	
+	private native String getRegressionResult()/*-{
+		return $doc.regressionApplet.getResult();
 	}-*/;
 
 	private String compileExport() {
@@ -287,19 +383,12 @@ public class MLShooterEntryPoint implements EntryPoint {
 	}
 
 	private void updateConsole() {
-/*		StringBuilder thetaStr = new StringBuilder();
-		for (double d : latestTheta) {
-			if (thetaStr.length() > 0) {
-				thetaStr.append(", ");
-			}
-			thetaStr.append(d);
+		StringBuilder html = new StringBuilder("<h3>Stats</h3>");
+		html.append("<div>Training data size: " + rawData.size() + "</div>");
+		if (latestTheta != null) {
+			html.append("<div>Training accuracy: " + (int)accuracy + "%</div>");
 		}
-*/		layout.setConsoleHtml("<h3>Stats</h3>" +
-				"<div>m=" + rawData.size() + "</div>" +
-				"<div>lambda=" + lambda + "</div>" +
-				"<div>accuracy=" + (int)accuracy + "%</div>" +
-				"<div>accuracy0=" + (int)accuracy0 + "%</div>" +
-				"<div>accuracy1=" + (int)accuracy1 + "%</div>");
+		layout.setConsoleHtml(html.toString());
 	}
 	
 	private boolean maybeShoot(float barrelRotationDgrees) {
@@ -312,22 +401,19 @@ public class MLShooterEntryPoint implements EntryPoint {
 			init[i++] = (double) t.speed;
 			init[i++] = t.rotation;
 			
+			// normalize data
 			for (int j = 0; j < init.length; j++) {
 				init[j] = (init[j] - means[j]) / sigmas[j];
 			}
-			
-			System.out.print("maybeShoot data: ");
-			for (double d : init) {
-				System.out.print(d + ", ");
-			}
-			System.out.println();
 
+			// add polynomial features
 			List<Double> poly = Utils.generatePolynomialFeatures(init, POLY_POW);
 			double[] res = new double[poly.size()];
 			for (int j = 0; j < res.length; j++) {
 				res[j] = poly.get(j);
 			}
 
+			// check for bad values
 			boolean skip = false;
 			for (double d : res) {
 				if (Double.isNaN(d)) {
@@ -338,6 +424,7 @@ public class MLShooterEntryPoint implements EntryPoint {
 				continue;
 			}
 			
+			// calculate the hypothesis
 			double s = 0;
 			for (int j = 0; j < latestTheta.length; j++) {
 				s += latestTheta[j] * res[j];
@@ -456,7 +543,7 @@ public class MLShooterEntryPoint implements EntryPoint {
 		if (d[0] < -1.57 || d[0] > -0.001) {
 			return;
 		}
-		if (d[0] > 1500) {
+		if (d[0] > 2000) {
 			return;
 		}
 		rawData.add(d);
