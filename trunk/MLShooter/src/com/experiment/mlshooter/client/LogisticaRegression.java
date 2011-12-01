@@ -11,7 +11,8 @@ import org.apache.commons.math.linear.RealMatrix;
 import org.apache.commons.math.optimization.GoalType;
 import org.apache.commons.math.optimization.RealConvergenceChecker;
 import org.apache.commons.math.optimization.RealPointValuePair;
-import org.apache.commons.math.optimization.direct.PowellOptimizer;
+import org.apache.commons.math.optimization.general.ConjugateGradientFormula;
+import org.apache.commons.math.optimization.general.NonLinearConjugateGradientOptimizer;
 
 public class LogisticaRegression {
 
@@ -25,7 +26,7 @@ public class LogisticaRegression {
 		final CostFunction J = new CostFunction(X, y, lambda);
 		final DerivativeCostFunction Jgrad = new DerivativeCostFunction(X, y, lambda);
 		
-		PowellOptimizer optimizer = new PowellOptimizer();
+		NonLinearConjugateGradientOptimizer optimizer = new NonLinearConjugateGradientOptimizer(ConjugateGradientFormula.FLETCHER_REEVES);
 		optimizer.setMaxIterations(200);
 		optimizer.setConvergenceChecker(new RealConvergenceChecker() {
 			
